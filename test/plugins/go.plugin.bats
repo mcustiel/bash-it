@@ -1,44 +1,54 @@
 #!/usr/bin/env bats
 
-#load ../test_helper
+load ../test_helper
 load ../../lib/helpers
-load ../../lib/composure
-load ../../plugins/available/go.plugin
+load "${BASH_IT}/vendor/github.com/erichs/composure/composure.sh"
 
-@test 'plugins go: reverse path: single entry' {
-  run _split_path_reverse '/foo'
-  echo "output = ${output}"
-  [ "$output" = "/foo" ]
-}
-
-@test 'plugins go: reverse path: single entry, colon empty' {
-  run _split_path_reverse '/foo:'
-  echo "output = ${output}"
-  [ "$output" = "/foo" ]
-}
-
-@test 'plugins go: reverse path: single entry, colon whitespace' {
-  run _split_path_reverse '/foo: '
-  echo "output = ${output}"
-  [ "$output" = "/foo" ]
-}
-
-@test 'plugins go: reverse path: multiple entries' {
-  run _split_path_reverse '/foo:/bar'
-  echo "output = ${output}"
-  [ "$output" = "/bar /foo" ]
+@test 'ensure _bash-it-gopath-pathmunge is defined' {
+  { [[ $CI ]] || _command_exists go; } || skip 'golang not found'
+  load ../../plugins/available/go.plugin
+  run type -t _bash-it-gopath-pathmunge
+  assert_line 'function'
 }
 
 @test 'plugins go: single entry in GOPATH' {
+  { [[ $CI ]] || _command_exists go; } || skip 'golang not found'
   export GOPATH="/foo"
   load ../../plugins/available/go.plugin
-  echo "$(echo $PATH | cut -d':' -f1,2)"
-  [ "$(echo $PATH | cut -d':' -f1)" = "/foo/bin" ]
+  assert_equal "$(cut -d':' -f1 <<<$PATH)" "/foo/bin"
+}
+
+@test 'plugins go: single entry in GOPATH, with space' {
+  { [[ $CI ]] || _command_exists go; } || skip 'golang not found'
+  export GOPATH="/foo bar"
+  load ../../plugins/available/go.plugin
+  assert_equal "$(cut -d':' -f1 <<<$PATH)" "/foo bar/bin"
+}
+
+@test 'plugins go: single entry in GOPATH, with escaped space' {
+  { [[ $CI ]] || _command_exists go; } || skip 'golang not found'
+  export GOPATH="/foo\ bar"
+  load ../../plugins/available/go.plugin
+  assert_equal "$(cut -d':' -f1 <<<$PATH)" "/foo\ bar/bin"
 }
 
 @test 'plugins go: multiple entries in GOPATH' {
+  { [[ $CI ]] || _command_exists go; } || skip 'golang not found'
   export GOPATH="/foo:/bar"
   load ../../plugins/available/go.plugin
-  echo "$(echo $PATH | cut -d':' -f1,2)"
-  [ "$(echo $PATH | cut -d':' -f1,2)" = "/foo/bin:/bar/bin" ]
+  assert_equal "$(cut -d':' -f1,2 <<<$PATH)" "/foo/bin:/bar/bin"
+}
+
+@test 'plugins go: multiple entries in GOPATH, with space' {
+  { [[ $CI ]] || _command_exists go; } || skip 'golang not found'
+  export GOPATH="/foo:/foo bar"
+  load ../../plugins/available/go.plugin
+  assert_equal "$(cut -d':' -f1,2 <<<$PATH)" "/foo/bin:/foo bar/bin"
+}
+
+@test 'plugins go: multiple entries in GOPATH, with escaped space' {
+  { [[ $CI ]] || _command_exists go; } || skip 'golang not found'
+  export GOPATH="/foo:/foo\ bar"
+  load ../../plugins/available/go.plugin
+  assert_equal "$(cut -d':' -f1,2 <<<$PATH)" "/foo/bin:/foo\ bar/bin"
 }
