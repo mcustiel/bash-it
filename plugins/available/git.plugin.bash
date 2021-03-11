@@ -315,3 +315,22 @@ function git-changelog() {
 		done
 	fi
 }
+
+function git_tag() {
+	FIRST_ARG=""
+	SECOND_ARG=""
+    NUM=""
+	if [ ! -z $1 ]; then
+		FIRST_ARG="${1}"
+	else
+        FIRST_ARG="-n9"
+    fi
+
+    if [ ! -z $2 ]; then
+		SECOND_ARG="-m ${2}"
+        FIRST_ARG="-a ${FIRST_ARG}"
+	fi
+
+    echo "git tag ${FIRST_ARG} ${SECOND_ARG}"
+	git tag ${FIRST_ARG} ${SECOND_ARG}
+}
